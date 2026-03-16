@@ -137,6 +137,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def run_bot():
     """Run the Telegram bot"""
     try:
+        # Create a new event loop for this thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
         # Create application
         app_bot = Application.builder().token(BOT_TOKEN).build()
         
