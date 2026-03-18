@@ -15,11 +15,10 @@ USER_DATA_FILE = "users.txt"
 
 # --- USER TRACKING LOGIC ---
 def log_user(user_id):
-    """Logs the user ID and current month to a file."""
+    """Logs the user ID and current month to a file for MAU tracking."""
     current_month = datetime.now().strftime("%Y-%m")
     entry = f"{user_id},{current_month}\n"
     
-    # Check if entry already exists to avoid duplicates
     existing_entries = []
     if os.path.exists(USER_DATA_FILE):
         with open(USER_DATA_FILE, "r") as f:
@@ -30,7 +29,7 @@ def log_user(user_id):
             f.write(entry)
 
 def get_monthly_count():
-    """Counts unique users for the current month."""
+    """Calculates unique users for the current calendar month."""
     if not os.path.exists(USER_DATA_FILE):
         return 0
     
@@ -40,9 +39,11 @@ def get_monthly_count():
     with open(USER_DATA_FILE, "r") as f:
         for line in f:
             if "," in line:
-                uid, month = line.strip().split(",")
-                if month == current_month:
-                    unique_users.add(uid)
+                parts = line.strip().split(",")
+                if len(parts) == 2:
+                    uid, month = parts
+                    if month == current_month:
+                        unique_users.add(uid)
     
     return len(unique_users)
 
@@ -60,7 +61,7 @@ def run_flask():
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    log_user(user_id) # Track the user
+    log_user(user_id)
     user_count = get_monthly_count()
     
     keyboard = [
@@ -68,7 +69,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🔓 I Joined (Unlock)", callback_data="check_membership")]
     ]
     
-    # Generic marketing tone with the user count included
     await update.message.reply_text(
         f"Welcome 👋 Join {user_count}+ active users this month receiving exclusive drops!\n\n"
         "Step 1/2: Join our channel to unlock."
@@ -82,7 +82,7 @@ async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
-    log_user(user_id) # Log again to ensure they are counted if they skip /start
+    log_user(user_id)
 
     try:
         member = await context.bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)
@@ -111,11 +111,13 @@ async def check_membership(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("⚠️ Error: Please ensure you have joined the channel first.")
 
 async def show_offer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Updated with the €1500 Welcome Bonus text."""
     query = update.callback_query
     await query.answer()
     keyboard = [[InlineKeyboardButton("🎰 Play Now", url=WEBSITE_URL)]]
     await query.message.reply_text(
-        "🔥 Exclusive Today: 100% Match Bonus.\nClick below to claim!",
+        "🔥 Exclusive Today: Up to €1500 Welcome Bonus.\n"
+        "Click below to claim before it expires!",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
