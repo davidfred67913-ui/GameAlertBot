@@ -135,13 +135,22 @@ async def run_bot():
         await asyncio.sleep(3600)
 
 def main():
+    # 1. Start Flask in a background thread
+    # This satisfies Render's requirement to bind to a PORT
     flask_thread = Thread(target=run_flask, daemon=True)
     flask_thread.start()
-    print("Bot is starting...")
+    
+    print("Starting Flask server on background thread...")
+    print("Initializing Telegram Bot...")
+
+    # 2. Start the Bot using the modern asyncio runner
+    # asyncio.run is the standard way to start the loop in Python 3.14
     try:
         asyncio.run(run_bot())
     except (KeyboardInterrupt, SystemExit):
-        pass
+        print("Bot process stopped manually.")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
 
 if __name__ == '__main__':
     main()
